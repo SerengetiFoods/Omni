@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMNI · AI Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0B0D11;
+  --panel:     #111318;
+  --surface:   #181C23;
+  --border:    #232830;
+  --border2:   #2E3540;
+  --text:      #E2E8F2;
+  --muted:     #5C6A7E;
+  --muted2:    #8896AA;
+  --accent:    #4F8EF7;
+  --accent2:   #7B5CF0;
+  --green:     #22C55E;
+  --amber:     #F59E0B;
+  --red:       #EF4444;
+
+  /* capability colors */
+  --img:    #38BDF8;
+  --logo:   #FBBF24;
+  --vid:    #F472B6;
+  --code:   #A78BFA;
+  --write:  #34D399;
+  --legal:  #94A3B8;
+  --srch:   #60A5FA;
+}
+
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── scrollbar ─────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════ */
+#header {
+  flex-shrink: 0;
+  height: 56px;
+  background: rgba(11,13,17,0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+}
+
+.h-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.h-orb {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--img), var(--code), var(--vid), var(--write), var(--img));
+  animation: orbSpin 8s linear infinite;
+  box-shadow: 0 0 12px rgba(79,142,247,0.4);
+  flex-shrink: 0;
+}
+@keyframes orbSpin { to { filter: hue-rotate(360deg); } }
+
+.h-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--text);
+}
+
+.h-tag {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+}
+
+.h-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:.5;transform:scale(.75);} }
+
+/* ══════════════════════════════════════════════
+   CAPABILITY PILLS (scrolling banner)
+══════════════════════════════════════════════ */
+#cap-bar {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  padding: 8px 16px;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#cap-bar::-webkit-scrollbar { display: none; }
+
+.cap-pill {
+  flex-shrink: 0;
+  padding: 5px 13px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 12px;
+  color: var(--muted2);
+  cursor: pointer;
+  transition: all .2s;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.cap-pill:hover { border-color: var(--border2); color: var(--text); background: var(--surface); }
+.cap-pill .pill-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+/* ══════════════════════════════════════════════
+   CHAT AREA
+══════════════════════════════════════════════ */
+#chat-wrap {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 0 8px;
+}
+
+#chat-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Welcome screen ─── */
+#welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  gap: 20px;
+  padding: 40px 0;
+}
+.w-orb {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--img), var(--code), var(--vid), var(--write), var(--img));
+  animation: orbSpin 6s linear infinite;
+  box-shadow: 0 0 40px rgba(79,142,247,0.25);
+  margin-bottom: 4px;
+}
+.w-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, var(--text), var(--muted2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.w-sub {
+  font-size: 14px;
+  color: var(--muted);
+  max-width: 420px;
+  line-height: 1.7;
+}
+.w-caps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 520px;
+}
+.w-cap {
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted2);
+  cursor: pointer;
+  transition: all .2s;
+  background: var(--panel);
+}
+.w-cap:hover { border-color: var(--border2); color: var(--text); transform: translateY(-1px); }
+.w-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+}
+.w-starter {
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted2);
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.w-starter:hover { border-color: var(--border2); color: var(--text); background: var(--surface); }
+.w-starter .st-icon { font-size: 16px; flex-shrink: 0; }
+.w-starter .st-text { flex: 1; }
+
+/* ── Messages ─── */
+.msg {
+  display: flex;
+  gap: 12px;
+  animation: msgIn .25s ease;
+}
+@keyframes msgIn { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+
+.msg.user { flex-direction: row-reverse; }
+
+.msg-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  margin-top: 2px;
+}
+.msg.user .msg-avatar {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 500;
+}
+.msg.agent .msg-avatar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.msg-body { flex: 1; max-width: calc(100% - 44px); }
+
+.msg.user .msg-body {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bubble {
+  padding: 11px 15px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.65;
+  max-width: 100%;
+}
+
+.msg.user .bubble {
+  background: linear-gradient(135deg, var(--accent), #3A7CE8);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  max-width: 80%;
+}
+
+.msg.agent .bubble {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+  width: 100%;
+}
+
+/* Agent bubble content styles */
+.bubble h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--muted2);
+  letter-spacing: 0.04em;
+}
+.bubble p { margin-bottom: 8px; }
+.bubble p:last-child { margin-bottom: 0; }
+
+/* ── Capability tag on agent messages ─── */
+.cap-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  border: 1px solid;
+}
+
+/* ── Typing indicator ─── */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 14px 16px;
+}
+.t-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: tdot 1.2s ease-in-out infinite;
+}
+.t-dot:nth-child(2) { animation-delay: .15s; }
+.t-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes tdot { 0%,80%,100%{transform:scale(.7);opacity:.4;} 40%{transform:scale(1);opacity:1;} }
+
+/* ── Streaming text ─── */
+.stream-cursor::after {
+  content: '▋';
+  animation: blink .7s step-end infinite;
+  color: var(--accent);
+  font-size: 13px;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+/* ── Code blocks ─── */
+.code-wrap {
+  background: #0D1117;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.code-hdr {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(79,142,247,.05);
+}
+.code-lang { font-size: 10px; color: var(--code); font-family: 'DM Mono', monospace; letter-spacing: .1em; }
+.code-copy {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: color .15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.code-copy:hover { color: var(--text); }
+pre {
+  padding: 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #C9D1D9;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Image prompt result ─── */
+.img-result {
+  background: linear-gradient(135deg, rgba(56,189,248,.06), rgba(56,189,248,.02));
+  border: 1px solid rgba(56,189,248,.2);
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 8px;
+}
+.img-prompt-label { font-size: 10px; color: var(--img); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 8px; font-weight: 600; }
+.img-prompt-text { font-size: 13px; line-height: 1.7; color: var(--text); margin-bottom: 12px; }
+.img-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── Logo SVG result ─── */
+.logo-grid-m {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.logo-card-m {
+  flex: 1;
+  min-width: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+.logo-card-m:hover { transform: translateY(-2px); border-color: var(--border2); }
+.lm-name { font-size: 13px; font-weight: 600; margin-top: 8px; }
+.lm-style { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: .1em; }
+
+/* ── Video storyboard ─── */
+.sb-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.sb-f {
+  flex: 1;
+  aspect-ratio: 16/9;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sb-f-text { font-size: 8px; color: rgba(255,255,255,.5); text-align: center; padding: 3px; line-height: 1.3; }
+.sb-tc { position: absolute; bottom: 2px; right: 4px; font-size: 7px; color: rgba(255,255,255,.3); }
+
+/* ── Sources (research) ─── */
+.src-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.src-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.src-item:hover { border-color: var(--srch); }
+.src-item-top { display: flex; gap: 8px; align-items: flex-start; }
+.src-n { width: 18px; height: 18px; border-radius: 50%; background: rgba(96,165,250,.15); display: grid; place-items: center; font-size: 9px; color: var(--srch); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.src-title { font-size: 13px; font-weight: 500; }
+.src-url { font-size: 10px; color: var(--srch); margin-top: 1px; }
+.src-snip { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+/* ── Action buttons in messages ─── */
+.msg-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; }
+.m-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted2);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.m-btn:hover { color: var(--text); border-color: var(--border2); }
+.m-btn.primary {
+  background: linear-gradient(135deg, var(--accent), #3A7CE8);
+  border-color: transparent;
+  color: #fff;
+}
+.m-btn.primary:hover { filter: brightness(1.1); }
+
+/* ── Disclaimer ─── */
+.disclaimer-inline {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: rgba(245,158,11,.06);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted2);
+  line-height: 1.5;
+}
+
+/* ── Writing output ─── */
+.writing-out {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+/* ── API scaffold ─── */
+.endpoint-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 6px 12px;
+  background: rgba(251,146,60,.08);
+  border: 1px solid rgba(251,146,60,.2);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.method-badge { padding: 2px 8px; border-radius: 5px; background: var(--api); color: #fff; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; }
+
+/* ── Specs row ─── */
+.specs-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.spec-chip {
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+.spec-v { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; color: var(--vid); }
+.spec-l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: 2px; }
+
+/* ══════════════════════════════════════════════
+   INPUT AREA
+══════════════════════════════════════════════ */
+#input-area {
+  flex-shrink: 0;
+  background: rgba(11,13,17,0.95);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  padding: 14px 20px 18px;
+}
+
+#input-inner {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+#composer {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+#composer:focus-within {
+  border-color: rgba(79,142,247,.45);
+  box-shadow: 0 0 0 3px rgba(79,142,247,.06);
+}
+
+#inp {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 14px 16px 10px;
+  resize: none;
+  min-height: 48px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+#inp::placeholder { color: var(--muted); }
+
+.composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  gap: 10px;
+}
+
+.detected-mode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  transition: all .2s;
+  min-width: 0;
+}
+.detected-mode .dm-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.detected-mode .dm-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.composer-right { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+#send-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+#send-btn:hover { filter: brightness(1.15); transform: scale(1.04); }
+#send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; filter: none; }
+
+.shortcut-hint { font-size: 10px; color: var(--muted); }
+
+/* ── mode suggestion chips below input ─── */
+#mode-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 4px 0;
+}
+.mode-chip {
+  padding: 5px 11px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.mode-chip:hover { border-color: var(--border2); color: var(--text); }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════ */
+@media(max-width: 600px) {
+  #cap-bar { padding: 8px 12px; }
+  #input-area { padding: 10px 12px 14px; }
+  .logo-grid-m { flex-direction: column; }
+  .sb-row { flex-wrap: wrap; }
+  .sb-f { min-width: calc(33% - 4px); }
+}
+
+/* flash copy */
+@keyframes flashG { 0%{background:rgba(34,197,94,.15);} 100%{background:transparent;} }
+.flash-copy { animation: flashG .5s ease; }
+
+
+
+/* ── Key Modal ───────────────────────────────────────────── */
+#key-modal {
+  position: fixed; inset: 0; z-index: 999;
+  background: rgba(7,9,14,0.94);
+  backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#key-modal.hidden { display: none; }
+.key-box {
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 36px 32px;
+  max-width: 440px; width: 100%;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  animation: msgIn .3s ease;
+}
+.key-box-orb {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--img), var(--code), var(--vid), var(--write), var(--img));
+  animation: orbSpin 6s linear infinite;
+  box-shadow: 0 0 20px rgba(79,142,247,0.3);
+  margin-bottom: 18px;
+}
+.key-box h2 {
+  font-family: 'DM Mono', monospace;
+  font-size: 19px; font-weight: 500; letter-spacing: 0.06em;
+  margin-bottom: 8px; color: var(--text);
+}
+.key-box p { font-size: 13px; color: var(--muted2); line-height: 1.75; margin-bottom: 20px; }
+.key-box a { color: var(--accent); text-decoration: none; }
+.key-box a:hover { text-decoration: underline; }
+.key-input-wrap { position: relative; margin-bottom: 10px; }
+#api-key-inp {
+  width: 100%; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 11px;
+  color: var(--text); font-family: 'DM Mono', monospace;
+  font-size: 13px; padding: 12px 42px 12px 14px;
+  outline: none; transition: border-color .2s;
+}
+#api-key-inp:focus { border-color: rgba(79,142,247,.5); }
+#api-key-inp::placeholder { color: var(--muted); font-family: 'DM Sans', sans-serif; letter-spacing: 0; }
+.key-toggle {
+  position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px;
+  transition: color .15s;
+}
+.key-toggle:hover { color: var(--text); }
+#key-submit {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; border-radius: 11px; color: #fff;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: filter .2s; margin-top: 4px;
+}
+#key-submit:hover { filter: brightness(1.12); }
+.key-note {
+  font-size: 11px; color: var(--muted);
+  text-align: center; margin-top: 12px; line-height: 1.6;
+}
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<div id="header">
+  <div class="h-brand">
+    <div class="h-orb"></div>
+    <div>
+      <div class="h-name">OMNI</div>
+    </div>
+    <span class="h-tag">OMNI · Free · No Key Needed</span>
+  </div>
+  <div class="h-status">
+    <div class="status-dot"></div>
+    Ready
+  </div>
+</div>
+
+<!-- CAPABILITY BAR -->
+<div id="cap-bar">
+  <button class="cap-pill" onclick="inject('Generate an image of ')"><span class="pill-dot" style="background:var(--img)"></span>Picture</button>
+  <button class="cap-pill" onclick="inject('Create a logo for ')"><span class="pill-dot" style="background:var(--logo)"></span>Logo</button>
+  <button class="cap-pill" onclick="inject('Create a video concept for ')"><span class="pill-dot" style="background:var(--vid)"></span>Video</button>
+  <button class="cap-pill" onclick="inject('Write code to ')"><span class="pill-dot" style="background:var(--code)"></span>Code</button>
+  <button class="cap-pill" onclick="inject('Write a ')"><span class="pill-dot" style="background:var(--write)"></span>Write</button>
+  <button class="cap-pill" onclick="inject('Explain the legal concept of ')"><span class="pill-dot" style="background:var(--legal)"></span>Legal</button>
+  <button class="cap-pill" onclick="inject('Research ')"><span class="pill-dot" style="background:var(--srch)"></span>Research</button>
+</div>
+
+<!-- CHAT -->
+<div id="chat-wrap">
+  <div id="chat-inner">
+    <div id="welcome">
+      <div class="w-orb"></div>
+      <div class="w-title">OMNI Agent</div>
+      <div class="w-sub">Powered by Groq llama-3.3-70b + DuckDuckGo. Blazing fast. Free for everyone. Just describe what you need — I'll figure out the rest.</div>
+      <div class="w-caps">
+        <span class="w-cap">🖼️ Image Prompts</span>
+        <span class="w-cap">✦ Logo Design</span>
+        <span class="w-cap">🎬 Video Concepts</span>
+        <span class="w-cap">⌨️ Code Generation</span>
+        <span class="w-cap">✍️ Creative Writing</span>
+        <span class="w-cap">⚖️ Legal Explainer</span>
+        <span class="w-cap">🔍 Research</span>
+      </div>
+      <div class="w-starters">
+        <button class="w-starter" onclick="useStarter(this)"><span class="st-icon">🖼️</span><span class="st-text">Generate an image of a neon-lit Tokyo street in heavy rain</span></button>
+        <button class="w-starter" onclick="useStarter(this)"><span class="st-icon">⌨️</span><span class="st-text">Write a Python script that fetches and parses Hacker News stories</span></button>
+        <button class="w-starter" onclick="useStarter(this)"><span class="st-icon">✍️</span><span class="st-text">Write the opening of a cyberpunk noir novel set in 2087</span></button>
+        <button class="w-starter" onclick="useStarter(this)"><span class="st-icon">🔍</span><span class="st-text">Research the most effective strategies for reducing employee burnout</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INPUT -->
+<div id="input-area">
+  <div id="input-inner">
+    <div id="composer">
+      <textarea id="inp" placeholder="Ask me anything — image, logo, video, code, writing, API, legal, research…" rows="1"
+        oninput="onInput()" onkeydown="onKey(event)"></textarea>
+      <div class="composer-footer">
+        <div class="detected-mode" id="detected-mode">
+          <div class="dm-dot" id="dm-dot" style="background:var(--muted)"></div>
+          <span class="dm-label" id="dm-label">Type anything to get started</span>
+        </div>
+        <div class="composer-right">
+          <span class="shortcut-hint">⌘↵</span>
+          <button id="send-btn" onclick="sendMessage()" title="Send">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 8L14 2L8 14L7 9L2 8Z" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="mode-chips"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CAPABILITY DETECTION ENGINE
+// ═══════════════════════════════════════════════════════════════
+const CAPS = {
+  image: {
+    color: 'var(--img)', label: 'Picture Generation', icon: '🖼️',
+    patterns: [/\b(image|picture|photo|illustration|draw|generate.*image|create.*image|paint|render|visualize|dall.e|midjourney|photorealistic|portrait|landscape|concept art)\b/i,
+               /\b(show me|make.*look like|design.*visual|generate.*art)\b/i]
+  },
+  logo: {
+    color: 'var(--logo)', label: 'Logo Design', icon: '✦',
+    patterns: [/\b(logo|brand|branding|identity|wordmark|emblem|icon for (a|my|the))\b/i,
+               /\b(design (a|my|the|our) (logo|brand|icon)|create.*brand|company (logo|mark))\b/i]
+  },
+  video: {
+    color: 'var(--vid)', label: 'Video Concept', icon: '🎬',
+    patterns: [/\b(video|film|movie|clip|animation|animate|cinematic|storyboard|scene|shot|footage|luma|dream machine)\b/i,
+               /\b(create.*video|make.*video|film.*scene|camera.*movement)\b/i]
+  },
+  code: {
+    color: 'var(--code)', label: 'Code Generation', icon: '⌨️',
+    patterns: [/\b(code|script|function|program|write.*in (python|js|javascript|typescript|go|rust|java|c\+\+|sql)|implement|build.*app|develop|debug|fix.*bug|refactor)\b/i,
+               /\b(class|function|api endpoint|database query|algorithm|data structure)\b/i,
+               /```|def |const |import |SELECT |function\s*\(/]
+  },
+  write: {
+    color: 'var(--write)', label: 'Creative Writing', icon: '✍️',
+    patterns: [/\b(write|draft|compose|author|story|novel|blog post|article|essay|email|copy|poem|script|narrative|paragraph|chapter|hook|intro|product description)\b/i,
+               /\b(creative writing|fiction|non-fiction|marketing copy|press release|cover letter|bio|biography)\b/i]
+  },
+  legal: {
+    color: 'var(--legal)', label: 'Legal Explainer', icon: '⚖️',
+    patterns: [/\b(legal|law|lawsuit|contract|agreement|liability|compliance|gdpr|copyright|trademark|patent|nda|terms of service|privacy policy|jurisdiction|clause|statute|regulation)\b/i,
+               /\b(is it legal|what does.*mean legally|explain.*law|legal definition|my rights|legal advice)\b/i]
+  },
+  search: {
+    color: 'var(--srch)', label: 'Research', icon: '🔍',
+    patterns: [/\b(research|find|search|look up|what is|explain|how does|why does|history of|studies on|evidence|data on|statistics|compare|vs\.|versus|overview of|summary of)\b/i,
+               /\b(latest|recent|current|2024|2025|according to|sources|references|cite)\b/i]
+  }
+};
+
+function detectCap(text) {
+  if (!text || text.length < 3) return null;
+  const scores = {};
+  for (const [cap, cfg] of Object.entries(CAPS)) {
+    scores[cap] = 0;
+    for (const p of cfg.patterns) {
+      if (p.test(text)) scores[cap] += 1;
+    }
+  }
+  const best = Object.entries(scores).sort((a,b) => b[1]-a[1])[0];
+  const filtered = ['image','logo','video','code','write','legal','search'];
+  const bestFiltered = Object.entries(scores).filter(([k]) => filtered.includes(k)).sort((a,b) => b[1]-a[1])[0];
+  return bestFiltered && bestFiltered[1] > 0 ? bestFiltered[0] : 'write';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SYSTEM PROMPTS (lean + direct)
+// ═══════════════════════════════════════════════════════════════
+const SYSTEMS = {
+
+  image: `You are an elite AI image prompt engineer. The user wants a visual created.
+Return a JSON object ONLY (no markdown, no backticks):
+{"enhanced_prompt":"A 80-120 word highly detailed DALL-E 3 optimized prompt. Include: subject details, environment, lighting (time of day, direction, quality), visual style, camera angle/framing, mood, color palette, and quality boosters like '8K', 'hyperrealistic', 'intricate detail', 'award-winning photography'.","style":"one word style label","mood":"one word mood"}`,
+
+  logo: `You are a world-class brand identity designer. The user wants a logo.
+Return a JSON object ONLY (no markdown, no backticks):
+{"brand_name":"extracted brand name","tagline":"5-6 word tagline","colors":{"primary":"#hex","secondary":"#hex","accent":"#hex"},"variants":[{"name":"concept name","style":"style description","description":"one sentence","shape":"circle|triangle|hexagon|diamond|shield|star|abstract"},{"name":"...","style":"...","description":"...","shape":"..."},{"name":"...","style":"...","description":"...","shape":"..."}],"brief":"3-sentence creative brief for Logo.com covering personality, audience, typography, and color rationale."}`,
+
+  video: `You are a cinematic AI director and Luma Dream Machine specialist.
+Return a JSON object ONLY (no markdown, no backticks):
+{"prompt":"60-90 word cinematic Luma-optimized prompt: opening frame, camera movement, subject motion, lighting, color grade, ending frame.","storyboard":[{"t":"0:00","desc":"10 words","color":"#hex"},{"t":"0:01","desc":"10 words","color":"#hex"},{"t":"0:02","desc":"10 words","color":"#hex"},{"t":"0:03","desc":"10 words","color":"#hex"},{"t":"0:04","desc":"10 words","color":"#hex"}],"duration":"5s","fps":"24","aspect":"16:9"}`,
+
+  code: `You are a senior software engineer. Write clean, production-quality code.
+Return a JSON object ONLY (no markdown, no backticks):
+{"language":"detected language name","code":"the complete code with helpful inline comments, error handling, and working example. Escape quotes and newlines properly for JSON.","explanation":"2-3 sentence explanation of what the code does and any setup needed."}`,
+
+  write: `You are Claude 3.5 Sonnet — the most human-like AI writer. Write with natural rhythm, vivid specifics, and authentic emotion. Avoid filler phrases.
+Return a JSON object ONLY (no markdown, no backticks):
+{"format":"detected format (story/email/blog/etc)","content":"the complete written piece. Natural prose, varied sentences, no AI clichés. Preserve paragraph breaks with \\n\\n.","word_count":123}`,
+
+
+  legal: `You are a legal educator (not a lawyer). Explain legal concepts clearly in plain English with practical implications. Always note jurisdictional variance.
+Return a JSON object ONLY (no markdown, no backticks):
+{"topic":"legal topic name","summary":"2 sentence plain-English summary","key_points":["point 1","point 2","point 3","point 4"],"caveat":"1 sentence about seeking real legal advice","disclaimer":true}`,
+
+  search: `You are a research analyst. Synthesize a comprehensive answer with plausible cited sources.
+Return a JSON object ONLY (no markdown, no backticks):
+{"summary":"150-200 word thorough answer to the research question","key_findings":["finding 1","finding 2","finding 3"],"sources":[{"title":"realistic source title","domain":"real-looking domain.com","url":"https://realistic-url.com/path","snippet":"what this source covers in 1 sentence"},{"title":"...","domain":"...","url":"...","snippet":"..."},{"title":"...","domain":"...","url":"...","snippet":"..."},{"title":"...","domain":"...","url":"...","snippet":"..."}]}`
+};
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let isThinking = false;
+let chatHistory = [];
+
+// ═══════════════════════════════════════════════════════════════
+// INPUT HANDLING
+// ═══════════════════════════════════════════════════════════════
+const inp = document.getElementById('inp');
+const dmDot = document.getElementById('dm-dot');
+const dmLabel = document.getElementById('dm-label');
+
+function onInput() {
+  // auto-resize
+  inp.style.height = 'auto';
+  inp.style.height = Math.min(inp.scrollHeight, 200) + 'px';
+
+  const val = inp.value.trim();
+  if (!val) {
+    dmDot.style.background = 'var(--muted)';
+    dmLabel.textContent = 'Type anything to get started';
+    document.getElementById('mode-chips').innerHTML = '';
+    return;
+  }
+
+  const cap = detectCap(val);
+  if (cap && CAPS[cap]) {
+    dmDot.style.background = CAPS[cap].color;
+    dmLabel.textContent = CAPS[cap].icon + ' ' + CAPS[cap].label + ' detected';
+  }
+}
+
+function onKey(e) {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault();
+    sendMessage();
+  }
+  if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function inject(text) {
+  inp.value = text;
+  inp.focus();
+  inp.style.height = 'auto';
+  inp.style.height = Math.min(inp.scrollHeight, 200) + 'px';
+  onInput();
+}
+
+function useStarter(el) {
+  const text = el.querySelector('.st-text').textContent;
+  inp.value = text;
+  onInput();
+  sendMessage();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHAT FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+function hideWelcome() {
+  const w = document.getElementById('welcome');
+  if (w) w.remove();
+}
+
+function addMsg(role, contentEl) {
+  hideWelcome();
+  const wrap = document.getElementById('chat-inner');
+  const msg = document.createElement('div');
+  msg.className = 'msg ' + role;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  if (role === 'user') { avatar.textContent = 'ME'; }
+  else { avatar.textContent = '◈'; }
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+
+  if (typeof contentEl === 'string') {
+    bubble.innerHTML = contentEl;
+  } else {
+    bubble.appendChild(contentEl);
+  }
+
+  body.appendChild(bubble);
+  msg.appendChild(avatar);
+  msg.appendChild(body);
+  wrap.appendChild(msg);
+  scrollBottom();
+  return bubble;
+}
+
+function addTyping() {
+  const bubble = addMsg('agent', '<div class="typing-indicator"><div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div></div>');
+  return bubble;
+}
+
+function scrollBottom() {
+  const cw = document.getElementById('chat-wrap');
+  setTimeout(() => cw.scrollTo({ top: cw.scrollHeight, behavior: 'smooth' }), 50);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEND + ROUTE
+// ═══════════════════════════════════════════════════════════════
+async function sendMessage() {
+  const text = inp.value.trim();
+  if (!text || isThinking) return;
+
+  isThinking = true;
+  document.getElementById('send-btn').disabled = true;
+  inp.value = '';
+  inp.style.height = 'auto';
+  dmDot.style.background = 'var(--muted)';
+  dmLabel.textContent = 'Thinking…';
+
+  addMsg('user', `<span>${escHtml(text)}</span>`);
+  const typingBubble = addTyping();
+
+  const cap = detectCap(text);
+
+  try {
+    const result = await callClaude(SYSTEMS[cap] || SYSTEMS.write, text);
+    typingBubble.parentElement.parentElement.remove();
+    await renderResult(cap, result, text);
+  } catch(e) {
+    typingBubble.parentElement.parentElement.remove();
+    const errMsg = e.message || 'Unknown error';
+    // Don't show error UI for key-related throws (modal already shown)
+    if (!errMsg.includes('No API key') && !errMsg.includes('Invalid API key')) {
+      addMsg('agent', `<div style="color:var(--red);font-size:13px">
+        <div style="font-weight:600;margin-bottom:4px">⚠️ Error</div>
+        <div style="color:var(--muted2)">${errMsg}</div>
+      </div>`);
+    }
+  }
+
+  isThinking = false;
+  document.getElementById('send-btn').disabled = false;
+  dmLabel.textContent = 'Type anything to get started';
+  scrollBottom();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CLAUDE API
+// ═══════════════════════════════════════════════════════════════
+
+
+// ═══════════════════════════════════════════════════════════════
+// OMNI BRAIN — Cloudflare Worker proxy (your key, hidden server-side)
+// ═══════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════
+// 👇 PASTE YOUR FREE GROQ KEY HERE (get one at console.groq.com/keys)
+const GROQ_API_KEY = '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';
+// ════════════════════════════════════════════
+
+// ── DuckDuckGo web search (no key needed) ───────────────────
+async function webSearch(query) {
+  try {
+    const url = 'https://api.duckduckgo.com/?q=' + encodeURIComponent(query) + '&format=json&no_html=1&skip_disambig=1';
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    const results = [];
+    if (data.AbstractText) results.push({ title: data.Heading || query, snippet: data.AbstractText });
+    (data.RelatedTopics || []).slice(0, 4).forEach(t => {
+      if (t.Text) results.push({ title: t.Text.split(' - ')[0] || '', snippet: t.Text });
+    });
+    if (data.Answer) results.push({ title: 'Quick Answer', snippet: data.Answer });
+    return results.length > 0 ? results : null;
+  } catch(e) { return null; }
+}
+
+function needsWebSearch(text) {
+  return /\b(latest|recent|current|today|now|2024|2025|2026|news|price|weather|who is|what is the|when did|research|find|look up|sources|studies)\b/i.test(text);
+}
+
+// ── Call via Cloudflare Worker (key never touches the browser) 
+async function callClaude(system, user) {
+  let finalUser = user;
+
+  // Augment with web search if needed
+  if (needsWebSearch(user)) {
+    const q = user.replace(/\b(research|find|look up|search for|tell me about)\b/gi, '').trim().slice(0, 120);
+    const results = await webSearch(q);
+    if (results && results.length > 0) {
+      const ctx = results.map((r, i) => '[' + (i+1) + '] ' + r.title + ': ' + r.snippet).join('\n');
+      finalUser = 'Web search context:\n' + ctx + '\n\nUser request: ' + user;
+    }
+  }
+
+  if (!GROQ_API_KEY || GROQ_API_KEY === 'paste-your-groq-key-here') {
+    throw new Error('Add your Groq key at the top of the HTML file.');
+  }
+
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + GROQ_API_KEY
+    },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user',   content: finalUser }
+      ],
+      max_tokens: 1400,
+      temperature: 0.7
+    }),
+    signal: AbortSignal.timeout(30000)
+  });
+
+  if (res.status === 401) throw new Error('Invalid Groq key — check it at console.groq.com');
+  if (res.status === 429) throw new Error('Rate limit hit — try again in a moment.');
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error('Groq error: ' + (e?.error?.message || res.status));
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text) throw new Error('No response from Groq');
+  return text;
+}
+
+
+function parseJSON(raw) {
+  try {
+    return JSON.parse(raw.replace(/```json|```/g, '').trim());
+  } catch {
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER RESULTS PER CAPABILITY
+// ═══════════════════════════════════════════════════════════════
+async function renderResult(cap, raw, originalPrompt) {
+  const d = parseJSON(raw);
+  const cfg = CAPS[cap];
+
+  const frag = document.createElement('div');
+  frag.innerHTML = `<div class="cap-tag" style="color:${cfg.color};border-color:${cfg.color}33;background:${cfg.color}11">${cfg.icon} ${cfg.label}</div>`;
+
+  switch(cap) {
+
+    case 'image': {
+      const prompt = d?.enhanced_prompt || raw;
+      const style = d?.style || 'cinematic';
+      const mood = d?.mood || '';
+      const key = storeText(prompt);
+      frag.innerHTML += `
+        <p style="font-size:13px;color:var(--muted2);margin-bottom:8px">Here's your enhanced image prompt, optimized for DALL-E 3:</p>
+        <div class="img-result">
+          <div class="img-prompt-label">Enhanced Prompt · ${escHtml(style)} · ${escHtml(mood)}</div>
+          <div class="img-prompt-text">${escHtml(prompt)}</div>
+          <div class="img-actions">
+            <button class="m-btn primary" onclick="copyStored('${key}',this)">⎘ Copy Prompt</button>
+            <a class="m-btn" href="https://designer.microsoft.com/image-creator" target="_blank">Open Microsoft Designer →</a>
+          </div>
+        </div>`;
+      break;
+    }
+
+    case 'logo': {
+      if (!d) { frag.innerHTML += `<p>${escHtml(raw)}</p>`; break; }
+      const shapes = {
+        circle:   c=>`<circle cx="32" cy="32" r="24" fill="${c}"/>`,
+        triangle: c=>`<polygon points="32,8 56,56 8,56" fill="${c}"/>`,
+        hexagon:  c=>`<polygon points="32,8 54,20 54,44 32,56 10,44 10,20" fill="${c}"/>`,
+        diamond:  c=>`<polygon points="32,8 56,32 32,56 8,32" fill="${c}"/>`,
+        shield:   c=>`<path d="M32 8 L56 18 L56 40 Q56 52 32 60 Q8 52 8 40 L8 18Z" fill="${c}"/>`,
+        star:     c=>`<polygon points="32,6 37,22 54,22 41,34 46,52 32,42 18,52 23,34 10,22 27,22" fill="${c}"/>`,
+        abstract: c=>`<rect x="8" y="8" width="22" height="48" rx="3" fill="${c}"/><rect x="34" y="8" width="22" height="22" rx="3" fill="${c}" opacity=".55"/>`
+      };
+      const cols = [d.colors?.primary||'#38BDF8', d.colors?.secondary||'#FBBF24', d.colors?.accent||'#F472B6'];
+      const varHtml = (d.variants||[]).map((v,i) => {
+        const c = cols[i%3];
+        const sh = shapes[v.shape] || shapes.circle;
+        return `<div class="logo-card-m" style="border-top:2px solid ${c}">
+          <svg viewBox="0 0 64 64" width="56" height="56">${sh(c)}</svg>
+          <div class="lm-name" style="color:${c}">${escHtml(d.brand_name||'BRAND')}</div>
+          <div class="lm-style">${escHtml(v.name||'')} · ${escHtml(v.style||'')}</div>
+        </div>`;
+      }).join('');
+      const brief = d.brief || '';
+      const key = storeText(brief);
+      frag.innerHTML += `
+        <p style="font-size:13px;color:var(--muted2);margin-bottom:8px">3 logo concepts for <strong>${escHtml(d.brand_name||'your brand')}</strong> — tagline: <em>${escHtml(d.tagline||'')}</em></p>
+        <div class="logo-grid-m">${varHtml}</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted2);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;line-height:1.7">${escHtml(brief)}</div>
+        <div class="msg-actions">
+          <button class="m-btn primary" onclick="copyStored('${key}',this)">⎘ Copy Brief</button>
+          <a class="m-btn" href="https://logo.com" target="_blank">Open Logo.com →</a>
+        </div>`;
+      break;
+    }
+
+    case 'video': {
+      if (!d) { frag.innerHTML += `<p>${escHtml(raw)}</p>`; break; }
+      const frames = (d.storyboard||[]).map(f => `
+        <div class="sb-f">
+          <div class="sb-f-text" style="background:${f.color||'#1a2a3a'}22;color:${f.color||'#aaa'};width:100%;height:100%;display:flex;align-items:center;justify-content:center;">${escHtml((f.desc||'').substring(0,30))}</div>
+          <span class="sb-tc">${escHtml(f.t||'')}</span>
+        </div>`).join('');
+      const prompt = d.prompt || raw;
+      const key = storeText(prompt);
+      frag.innerHTML += `
+        <p style="font-size:13px;color:var(--muted2);margin-bottom:4px">Cinematic brief + 5-frame storyboard for Luma Dream Machine:</p>
+        <div class="sb-row">${frames}</div>
+        <div class="specs-row">
+          <div class="spec-chip"><div class="spec-v">${escHtml(d.duration||'5s')}</div><div class="spec-l">Duration</div></div>
+          <div class="spec-chip"><div class="spec-v">${escHtml(d.fps||'24')}fps</div><div class="spec-l">Frame Rate</div></div>
+          <div class="spec-chip"><div class="spec-v">${escHtml(d.aspect||'16:9')}</div><div class="spec-l">Aspect</div></div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;line-height:1.7">${escHtml(prompt)}</div>
+        <div class="msg-actions">
+          <button class="m-btn primary" onclick="copyStored('${key}',this)">⎘ Copy Prompt</button>
+          <a class="m-btn" href="https://lumalabs.ai/dream-machine" target="_blank">Open Luma →</a>
+        </div>`;
+      break;
+    }
+
+    case 'code': {
+      const code = d?.code || raw;
+      const lang = d?.language || 'code';
+      const explanation = d?.explanation || '';
+      const codeId = 'c' + Date.now();
+      const key = storeText(code);
+      frag.innerHTML += `
+        ${explanation ? `<p style="font-size:13px;margin-bottom:8px">${escHtml(explanation)}</p>` : ''}
+        <div class="code-wrap">
+          <div class="code-hdr">
+            <span class="code-lang">${escHtml(lang.toUpperCase())}</span>
+            <button class="code-copy" id="${codeId}" onclick="copyCodeStored('${codeId}','${key}')">Copy ⎘</button>
+          </div>
+          <pre>${escHtml(code)}</pre>
+        </div>
+        <div class="msg-actions">
+          <a class="m-btn" href="https://cursor.com" target="_blank">✨ Refine in Cursor →</a>
+        </div>`;
+      break;
+    }
+
+    case 'write': {
+      const content2 = d?.content || raw;
+      const format = d?.format || 'writing';
+      const wc = d?.word_count || '';
+      const key = storeText(content2);
+      frag.innerHTML += `
+        <p style="font-size:11px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.1em">${escHtml(format)} ${wc ? '· ' + wc + ' words' : ''}</p>
+        <div class="writing-out">${escHtml(content2)}</div>
+        <div class="msg-actions">
+          <button class="m-btn primary" onclick="copyStored('${key}',this)">⎘ Copy</button>
+          <a class="m-btn" href="https://claude.ai" target="_blank">Continue in Claude.ai →</a>
+        </div>`;
+      break;
+    }
+
+    case 'legal': {
+      if (!d) { frag.innerHTML += `<p>${escHtml(raw)}</p>`; break; }
+      const points = (d.key_points||[]).map(p=>`<li style="margin-bottom:6px">${escHtml(p)}</li>`).join('');
+      const fullText = (d.summary||'') + '\n\n' + (d.key_points||[]).join('\n');
+      const key = storeText(fullText);
+      frag.innerHTML += `
+        <div class="disclaimer-inline">⚠️ <span><strong>Educational only</strong> — not legal advice. Laws vary by jurisdiction. Consult a qualified attorney for your specific situation.</span></div>
+        <p style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">${escHtml(d.topic||'Legal Overview')}</p>
+        <p style="font-size:14px;line-height:1.75;margin-bottom:10px">${escHtml(d.summary||'')}</p>
+        ${points ? `<ul style="margin:0 0 10px 16px;font-size:13px;line-height:1.7;color:var(--muted2)">${points}</ul>` : ''}
+        ${d.caveat ? `<p style="font-size:12px;color:var(--muted);font-style:italic">${escHtml(d.caveat)}</p>` : ''}
+        <div class="msg-actions">
+          <button class="m-btn primary" onclick="copyStored('${key}',this)">⎘ Copy</button>
+          <a class="m-btn" href="https://claude.ai" target="_blank">Continue in Claude.ai →</a>
+        </div>`;
+      break;
+    }
+
+    case 'search': {
+      if (!d) { frag.innerHTML += `<p>${escHtml(raw)}</p>`; break; }
+      const findings = (d.key_findings||[]).map(f=>`<li style="margin-bottom:5px">${escHtml(f)}</li>`).join('');
+      const sources = (d.sources||[]).map((s,i)=>{
+        const sKey = storeText(s.url||'https://perplexity.ai');
+        return `<div class="src-item" onclick="window.open(COPY_STORE['${sKey}'],'_blank')">
+          <div class="src-item-top">
+            <div class="src-n">${i+1}</div>
+            <div>
+              <div class="src-title">${escHtml(s.title||'Source')}</div>
+              <div class="src-url">${escHtml(s.domain||'')}</div>
+            </div>
+          </div>
+          <div class="src-snip">${escHtml(s.snippet||'')}</div>
+        </div>`;
+      }).join('');
+      const summaryKey = storeText(d.summary||'');
+      frag.innerHTML += `
+        <p style="font-size:14px;line-height:1.75;margin-bottom:10px">${escHtml(d.summary||'')}</p>
+        ${findings ? `<ul style="margin:0 0 12px 16px;font-size:13px;line-height:1.7;color:var(--muted2)">${findings}</ul>` : ''}
+        <div class="src-list">${sources}</div>
+        <div class="msg-actions">
+          <button class="m-btn primary" onclick="copyStored('${summaryKey}',this)">⎘ Copy Summary</button>
+          <a class="m-btn" href="https://perplexity.ai" target="_blank">🔍 Verify on Perplexity →</a>
+        </div>`;
+      break;
+    }
+
+    default: {
+      frag.innerHTML += `<div class="writing-out">${escHtml(raw)}</div>`;
+    }
+  }
+
+  addMsg('agent', frag);
+}
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+function escHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/\n/g,'<br>');
+}
+
+function escAttr(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/`/g, '\\`')
+    .replace(/\$/g, '\\$');
+}
+
+// ─── COPY STORE: avoids inline JS string escaping issues ──────
+const COPY_STORE = {};
+let copyStoreIdx = 0;
+function storeText(text) {
+  const key = 'cp_' + (++copyStoreIdx);
+  COPY_STORE[key] = text;
+  return key;
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).catch(()=>{});
+  if (btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Copied!';
+    setTimeout(() => btn.innerHTML = orig, 1800);
+  }
+}
+
+function copyStored(key, btnEl) {
+  const text = COPY_STORE[key] || '';
+  navigator.clipboard.writeText(text).catch(()=>{});
+  if (btnEl) {
+    const orig = btnEl.innerHTML;
+    btnEl.innerHTML = '✓ Copied!';
+    setTimeout(() => btnEl.innerHTML = orig, 1800);
+  }
+}
+
+function copyCode(id, code) {
+  navigator.clipboard.writeText(code).catch(()=>{});
+  const btn = document.getElementById(id);
+  if (btn) {
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy ⎘', 1800);
+  }
+}
+
+function copyCodeStored(btnId, storeKey) {
+  const text = COPY_STORE[storeKey] || '';
+  navigator.clipboard.writeText(text).catch(()=>{});
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy ⎘', 1800);
+  }
+}
+
+// auto-grow textarea on load
+inp.addEventListener('input', () => {
+  inp.style.height = 'auto';
+  inp.style.height = Math.min(inp.scrollHeight, 200) + 'px';
+});
+
+</script>
+</body>
+</html>
